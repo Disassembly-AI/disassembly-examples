@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: terraform-provider } }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v5
         with: { go-version: "1.22" }
 
@@ -85,7 +85,7 @@ jobs:
       fail-fast: false
       matrix: { cloud: [aws, azure, gcp] }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: opentofu/setup-opentofu@v1
         with: { tofu_wrapper: false }
       - name: Validate terraform/${{ matrix.cloud }}
