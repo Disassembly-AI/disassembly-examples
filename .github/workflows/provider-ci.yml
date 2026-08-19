@@ -34,7 +34,7 @@ jobs:
           for i in $(seq 1 10); do curl -sf -H "Authorization: Bearer x" \
             -X POST localhost:8080/v1/scans -d '{"target":"x"}' && break; sleep 1; done
 
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@v2
         with: { tofu_wrapper: false }
 
       - name: Dev override
@@ -86,7 +86,7 @@ jobs:
       matrix: { cloud: [aws, azure, gcp] }
     steps:
       - uses: actions/checkout@v4
-      - uses: opentofu/setup-opentofu@v1
+      - uses: opentofu/setup-opentofu@v2
         with: { tofu_wrapper: false }
       - name: Validate terraform/${{ matrix.cloud }}
         working-directory: terraform/${{ matrix.cloud }}
