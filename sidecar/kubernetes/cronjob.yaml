@@ -1,0 +1,20 @@
+# Scheduled scan of an in-cluster service (recommended over an always-on sidecar).
+apiVersion: batch/v1
+kind: CronJob
+metadata: { name: disassembly-scan }
+spec:
+  schedule: "0 6 * * 1"          # weekly, Monday 06:00
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: disassembly
+              image: ghcr.io/disassembly-ai/toolkit:latest
+              args: ["scan", "http://acme-app.default.svc.cluster.local:3000", "--ci"]
+              env:
+                - name: DISASSEMBLY_API_KEY
+                  valueFrom: { secretKeyRef: { name: disassembly, key: api-key } }

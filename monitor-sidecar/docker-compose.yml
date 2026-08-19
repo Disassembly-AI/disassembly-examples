@@ -1,0 +1,11 @@
+# App + monitoring sidecar. The sidecar streams telemetry to the single-pane view.
+services:
+  app:
+    image: your-org/acme-app:latest
+    expose: ["3000"]
+  monitor:
+    build: .
+    environment:
+      DISASSEMBLY_API_KEY: ${DISASSEMBLY_API_KEY:?set DISASSEMBLY_API_KEY}
+      TARGET: http://app:3000
+      INTERVAL_SECONDS: "300"

@@ -1,0 +1,29 @@
+{
+  "family": "acme-app-with-scan",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "app",
+      "image": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/acme-app:latest",
+      "portMappings": [{ "containerPort": 3000 }],
+      "essential": true
+    },
+    {
+      "name": "disassembly",
+      "image": "ghcr.io/disassembly-ai/toolkit:latest",
+      "essential": false,
+      "command": ["scan", "http://localhost:3000", "--ci"],
+      "dependsOn": [{ "containerName": "app", "condition": "START" }],
+      "secrets": [
+        {
+          "name": "DISASSEMBLY_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:<REGION>:<ACCOUNT_ID>:secret:disassembly/api-key"
+        }
+      ]
+    }
+  ]
+}

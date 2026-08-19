@@ -1,0 +1,15 @@
+# CircleCI — disassembly scan. Set DISASSEMBLY_API_KEY as a project/context secret.
+version: 2.1
+jobs:
+  scan:
+    docker:
+      - image: ghcr.io/disassembly-ai/toolkit:latest
+    steps:
+      - run:
+          name: Disassembly scan
+          command: disassembly scan "$SCAN_TARGET" --ci > report.sarif
+      - store_artifacts:
+          path: report.sarif
+workflows:
+  security:
+    jobs: [scan]

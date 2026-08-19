@@ -1,0 +1,14 @@
+*.sarif
+report.md
+.env
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+__pycache__/
+
+# Go provider build artifact
+terraform-provider/terraform-provider-disassembly
+*.tofurc
+terraform.tfstate*
+.terraform.lock.hcl

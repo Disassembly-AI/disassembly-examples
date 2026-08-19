@@ -1,0 +1,21 @@
+# Azure DevOps — disassembly scan.
+# Add DISASSEMBLY_API_KEY as a secret pipeline variable (or from a variable group / Key Vault).
+trigger: [main]
+schedules:
+  - cron: "0 6 * * 1"
+    displayName: Weekly scan
+    branches: { include: [main] }
+    always: true
+pool: { vmImage: ubuntu-latest }
+variables:
+  SCAN_TARGET: "https://staging.example.com"
+steps:
+  - script: |
+      docker run --rm -e DISASSEMBLY_API_KEY \
+        ghcr.io/disassembly-ai/toolkit:latest \
+        scan "$(SCAN_TARGET)" --ci > $(Build.ArtifactStagingDirectory)/report.sarif
+    displayName: Disassembly scan
+    env:
+      DISASSEMBLY_API_KEY: $(DISASSEMBLY_API_KEY)
+  - publish: $(Build.ArtifactStagingDirectory)/report.sarif
+    artifact: sarif

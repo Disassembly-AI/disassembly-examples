@@ -1,0 +1,18 @@
+# AWS CodeBuild — disassembly scan.
+# DISASSEMBLY_API_KEY: pull from Secrets Manager (see env.secrets-manager below).
+# SCAN_TARGET: plaintext env var on the CodeBuild project.
+version: 0.2
+env:
+  variables:
+    SCAN_TARGET: "https://staging.example.com"
+  secrets-manager:
+    DISASSEMBLY_API_KEY: "disassembly/api-key:DISASSEMBLY_API_KEY"
+phases:
+  build:
+    commands:
+      - |
+        docker run --rm -e DISASSEMBLY_API_KEY \
+          ghcr.io/disassembly-ai/toolkit:latest \
+          scan "$SCAN_TARGET" --ci > report.sarif
+artifacts:
+  files: [report.sarif]

@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: acme-app }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: acme-app } }
+  template:
+    metadata: { labels: { app: acme-app } }
+    spec:
+      containers:
+        - name: app
+          image: your-org/acme-app:latest
+          ports: [{ containerPort: 3000 }]
+        - name: disassembly-monitor
+          image: ghcr.io/disassembly-ai/monitor:latest
+          env:
+            - { name: TARGET, value: "http://localhost:3000" }
+            - { name: INTERVAL_SECONDS, value: "300" }
+            - name: DISASSEMBLY_API_KEY
+              valueFrom: { secretKeyRef: { name: disassembly, key: api-key } }

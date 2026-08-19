@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule: { interval: weekly }
+    labels: ["type:chore"]
+  - package-ecosystem: gomod
+    directory: "/terraform-provider"
+    schedule: { interval: weekly }
+    labels: ["type:chore"]
+  - package-ecosystem: terraform
+    directory: "/terraform/aws"
+    schedule: { interval: weekly }
+    labels: ["type:chore"]

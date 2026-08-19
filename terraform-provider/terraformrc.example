@@ -1,0 +1,8 @@
+# Copy into ~/.terraformrc to use your locally-built provider without a registry.
+# Point the path at the directory that contains the built terraform-provider-disassembly binary.
+provider_installation {
+  dev_overrides {
+    "Disassembly-AI/disassembly" = "/absolute/path/to/disassembly-examples/terraform-provider"
+  }
+  direct {}
+}

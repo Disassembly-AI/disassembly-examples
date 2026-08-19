@@ -1,0 +1,27 @@
+# App Deployment with a Disassembly sidecar that scans the app in-pod (localhost).
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: acme-app, labels: { app: acme-app } }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: acme-app } }
+  template:
+    metadata: { labels: { app: acme-app } }
+    spec:
+      containers:
+        - name: app
+          image: your-org/acme-app:latest
+          ports: [{ containerPort: 3000 }]
+        - name: disassembly
+          image: ghcr.io/disassembly-ai/toolkit:latest
+          args: ["scan", "http://localhost:3000", "--ci"]
+          env:
+            - name: DISASSEMBLY_API_KEY
+              valueFrom: { secretKeyRef: { name: disassembly, key: api-key } }
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: disassembly }
+type: Opaque
+stringData:
+  api-key: "REPLACE_ME"     # or manage via External Secrets / Sealed Secrets

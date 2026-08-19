@@ -1,0 +1,95 @@
+name: provider-ci
+on:
+  push:
+    branches: [main]
+    paths: ["terraform-provider/**", ".github/workflows/provider-ci.yml"]
+  pull_request:
+    paths: ["terraform-provider/**"]
+  workflow_dispatch:
+
+jobs:
+  provider:
+    name: build + apply (mock)
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: terraform-provider } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: { go-version: "1.22" }
+
+      - name: Vet + gofmt
+        run: |
+          go vet ./...
+          test -z "$(gofmt -l .)" || { echo "gofmt needed:"; gofmt -l .; exit 1; }
+
+      - name: Build provider + mock
+        run: |
+          go build -o terraform-provider-disassembly .
+          go build -o /tmp/disa-mock ./mockserver
+
+      - name: Start mock API
+        run: |
+          nohup /tmp/disa-mock >/tmp/mock.log 2>&1 &
+          disown || true
+          for i in $(seq 1 10); do curl -sf -H "Authorization: Bearer x" \
+            -X POST localhost:8080/v1/scans -d '{"target":"x"}' && break; sleep 1; done
+
+      - uses: opentofu/setup-opentofu@v1
+        with: { tofu_wrapper: false }
+
+      - name: Dev override
+        run: |
+          cat > "$HOME/.terraformrc" <<RC
+          provider_installation {
+            dev_overrides { "Disassembly-AI/disassembly" = "$GITHUB_WORKSPACE/terraform-provider" }
+            direct {}
+          }
+          RC
+
+      - name: Apply demo (expect success, findings populated)
+        working-directory: terraform-provider/demo
+        env: { DISASSEMBLY_API_KEY: ci }
+        run: |
+          tofu apply -auto-approve
+          tofu output -json | tee out.json
+          test "$(tofu output -json | jq -r '.summary.value.high')" = "1"
+          test "$(tofu output -json | jq -r '.summary.value.total')" = "2"
+          echo "✓ apply succeeded with expected findings"
+
+      - name: Gate blocks deploy on high finding (expect apply to FAIL)
+        run: |
+          mkdir -p /tmp/gate && cd /tmp/gate
+          cat > main.tf <<TF
+          terraform {
+            required_providers {
+              disassembly = { source = "Disassembly-AI/disassembly" }
+            }
+          }
+          provider "disassembly" { endpoint = "http://localhost:8080" }
+          resource "disassembly_scan" "gate" {
+            target           = "https://staging.example.com"
+            fail_on_severity = "high"
+          }
+          TF
+          export DISASSEMBLY_API_KEY=ci
+          if tofu apply -auto-approve; then
+            echo "::error::gate should have failed the apply"; exit 1
+          else
+            echo "✓ apply correctly blocked by the high-severity gate"
+          fi
+
+  terraform-validate:
+    name: tofu validate (${{ matrix.cloud }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: { cloud: [aws, azure, gcp] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: opentofu/setup-opentofu@v1
+        with: { tofu_wrapper: false }
+      - name: Validate terraform/${{ matrix.cloud }}
+        working-directory: terraform/${{ matrix.cloud }}
+        run: |
+          tofu init -backend=false -input=false
+          tofu validate

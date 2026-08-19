@@ -1,0 +1,15 @@
+# Disassembly.AI scan → GitLab code scanning (SAST report artifact).
+# Set DISASSEMBLY_API_KEY as a masked CI/CD variable. SCAN_TARGET as a variable.
+disassembly_scan:
+  image: ghcr.io/disassembly-ai/toolkit:latest
+  stage: test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  script:
+    - disassembly scan "$SCAN_TARGET" --ci > gl-sast-report.sarif
+  artifacts:
+    reports:
+      sast: gl-sast-report.sarif
+    paths: [gl-sast-report.sarif]
+    when: always

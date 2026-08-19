@@ -1,0 +1,19 @@
+# Google Cloud Build — disassembly scan.
+# Store the API key in Secret Manager as 'disassembly-api-key'.
+steps:
+  - name: ghcr.io/disassembly-ai/toolkit:latest
+    entrypoint: bash
+    secretEnv: ["DISASSEMBLY_API_KEY"]
+    args:
+      - -c
+      - disassembly scan "$_SCAN_TARGET" --ci > /workspace/report.sarif
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/disassembly-api-key/versions/latest
+      env: DISASSEMBLY_API_KEY
+substitutions:
+  _SCAN_TARGET: "https://staging.example.com"
+artifacts:
+  objects:
+    location: "gs://$PROJECT_ID-scan-reports/"
+    paths: ["/workspace/report.sarif"]

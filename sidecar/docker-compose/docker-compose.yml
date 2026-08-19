@@ -1,0 +1,21 @@
+# Run your app + a Disassembly sidecar that scans it on the same network.
+# Usage:  DISASSEMBLY_API_KEY=... docker compose up --abort-on-container-exit
+services:
+  app:
+    build: ../..            # your application
+    # image: your-org/your-app:latest
+    expose: ["3000"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/health"]
+      interval: 5s
+      retries: 10
+
+  disassembly:
+    image: ghcr.io/disassembly-ai/toolkit:latest
+    depends_on:
+      app: { condition: service_healthy }
+    environment:
+      DISASSEMBLY_API_KEY: ${DISASSEMBLY_API_KEY:?set DISASSEMBLY_API_KEY}
+    command: ["scan", "http://app:3000", "--ci"]
+    volumes:
+      - ./reports:/reports        # report.sarif lands here
